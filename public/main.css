@@ -1,0 +1,15 @@
+.content {
+    text-align: center;
+}
+
+.dialog {
+    z-index: 100;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    margin-left: -200px;
+    margin-top: -150px;
+    width: 400px;
+    height: 300px;
+    background-color: #ddd;
+}

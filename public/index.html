@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="main.css" type="text/css" />
+  <title>AYLAR.US</title>
+</head>
+<body>
+
+<div class="content">
+  <h1>ALL YOUR LOCAL ADDRESS ARE ( BELONG TO ) US!</h1>
+
+  <form id="update-subdomain" method="GET" action="update">
+    <input type="text" name="subdomain" placeholder="subdomain" value="hoge"/>.aylar.us =
+    <input type="text" name="address" placeholder="192.168.0.xxx" value="192.168.11.7"/>
+    <button type="submit">Register!</button>
+  </form>
+</div>
+
+<script id="success-dialog" type="text/html">
+<div class="dialog">
+  <div class="message">hoge</div>
+</div>
+</script>
+
+<script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="main.js"></script>
+</body>
+</html>
