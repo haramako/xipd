@@ -8,9 +8,15 @@ if (argv.length < 3) {
   process.exit(1);
 }
 
+xip.initDatabase( './dns.db', function(db){
+
 var domain = argv[2];
 var address = argv[3] || "127.0.0.1";
-var server = xip.createServer(domain, address);
+var server = xip.createServer(domain, address, db);
 server.bind(5300);
 
 console.log("xipd listening on port 5300: domain =", domain, "address =", address);
+
+web = xip.createWebServer(db)
+
+});
