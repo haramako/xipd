@@ -45,7 +45,7 @@ exports.Server = class Server extends dnsserver.Server
   constructor: (domain, @rootAddress, @db) ->
     super
     @_domain = domain.toLowerCase()
-    @soa = createSOA @domain
+    @soa = createSOA @_domain
     @on "request", @handleRequest
     @on "error", (err,req,res)=>
       console.log err
@@ -53,14 +53,13 @@ exports.Server = class Server extends dnsserver.Server
       res.send()
 
   handleRequest: (req, res) =>
-    console.log req
     question  = req.question
     subdomain = Subdomain.extract question.name, @_domain, @db
     console.log subdomain
 
     if subdomain? and isARequest( question ) and subdomain.getAddress()?
       res.addRR question.name, NS_T_A, NS_C_IN, 600, subdomain.getAddress()
-    else if subdomain?.isEmpty() and isNSRequest question
+    else if subdomain?.isEmpty() and isNSRequest( question )
       res.addRR question.name, NS_T_SOA, NS_C_IN, 600, @soa, true
     else
       res.header.rcode = NS_RCODE_NXDOMAIN
@@ -86,6 +85,9 @@ exports.Server = class Server extends dnsserver.Server
 exports.createServer = (domain, address = "127.0.0.1", db) ->
   new Server domain, address, db
 
+fixAddr = www:'127.0.0.1'
+fixAddr[null] = '127.0.0.1'
+
 exports.Subdomain = class Subdomain
   @extract: (name, domain, db) ->
     return unless name
@@ -107,12 +109,14 @@ exports.Subdomain = class Subdomain
   constructor: (@subdomain, db ) ->
     @labels = @subdomain?.split(".") ? []
     @length = @labels.length
-    row = db.get( @subdomain )
-    console.log(row)
-    if row
-      @address = row.address
+    if fixAddr[@subdomain]
+      @address = fixAddr[@subdomain]
     else
-      @address = null
+      row = db.get( @subdomain )
+      if row
+        @address = row.address
+      else
+        @address = null
 
   isEmpty: ->
     @length is 0
