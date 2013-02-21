@@ -2,19 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
+  <link rel="stylesheet" href="bootstrap.min.css" type="text/css" />
   <link rel="stylesheet" href="main.css" type="text/css" />
-  <title>AYLAR.US</title>
+  <title>l-o-cal.net</title>
 </head>
 <body>
 
 <div class="content">
-  <h1>ALL YOUR LOCAL ADDRESS ARE ( BELONG TO ) US!</h1>
+  <div class="title">
+    <h1>l-o-cal.net</h1>
+    <p>ALL YOUR IP ARE BELONG TO US!</p>
+  </div>
+  
+  <hr/>
 
-  <form id="update-subdomain" method="GET" action="update">
-    <input type="text" name="subdomain" placeholder="subdomain" value="hoge"/>.aylar.us =
-    <input type="text" name="address" placeholder="192.168.0.xxx" value="192.168.11.7"/>
-    <button type="submit">Register!</button>
+  <form id="update-subdomain" class="form form-inline form-main" method="GET" action="update">
+    <div class="rubi-box">
+      <span class="text-rubi">サブドメイン</span>
+      <input type="text" name="subdomain" placeholder="subdomain" value=""/>
+    </div>
+    <span id="domain-name">l-o-cal.net</span> =
+    <div class="rubi-box">
+      <span class="text-rubi">IPアドレス</span>
+      <input type="text" name="address" placeholder="192.168.x.xxx" value=""/>
+    </div>
+    　<button class="btn btn-primary btn-large" type="submit">作成!</button>
   </form>
+  
+  <hr/>
+
+  <div class="tab">
+    l-o-cal.net は、LAN内用のダイナミックDNSサービスです。
+  </div>
+
 </div>
 
 <script id="success-dialog" type="text/html">
