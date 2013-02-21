@@ -2,13 +2,42 @@ dnsserver = require "dnsserver"
 express = require "express"
 dirty = require 'dirty'
 
-# Initialize database
-exports.initDatabase = (filename='./dns.db',callback)->
-  db = dirty(filename)
-  callback db
+
+# , function(db){
+
+# 	var domain = argv[2];
+# 	var address = argv[3] || "127.0.0.1";
+# 	var server = xip.createServer(domain, address, db);
+# 	server.bind(5300);
+
+# 	console.log("xipd listening on port 5300: domain =", domain, "address =", address);
+
+# 	var web = xip.createWebServer(db);
+
+# });
+
+log = ()->
+  if exports.config?.debug
+    console.log.apply console, arguments
+
+xip = exports
+db = undefined
+
+# Run all
+exports.run = (@config)->
+  log 'config=', @config
+  db = dirty( @config.db )
+  xip.Subdomain.fixedAddr = @config.fixedAddr || {}
+
+  http = xip.createWebServer( @config ).listen( @config.httpPort )
+  console.log "start http server, port=#{@config.httpPort}"
+
+  dns = xip.createServer( @config ).bind( @config.dnsPort )
+  console.log "start dns server, port=#{@config.dnsPort}"
+
 
 # Web Server
-exports.createWebServer = (db)->
+exports.createWebServer = (config)->
   app = express()
   app.use express.static( './public')
 
@@ -29,11 +58,10 @@ exports.createWebServer = (db)->
       db.set name, name:name, address:address, expire_at:Date.now()+60*60
       res.send err:'ok'
 
-  app.listen(3000)
+
 
 
 # DNS Server
-
 exports.Server = class Server extends dnsserver.Server
   NS_T_A            = 1
   NS_T_NS           = 2
@@ -42,29 +70,36 @@ exports.Server = class Server extends dnsserver.Server
   NS_C_IN           = 1
   NS_RCODE_NXDOMAIN = 3
 
-  constructor: (domain, @rootAddress, @db) ->
+  constructor: (@config) ->
     super
-    @_domain = domain.toLowerCase()
-    @soa = createSOA @_domain
+    @mname = @config.mname || throw 'config.mname not found'
+    @rname = @config.mname || throw 'config.rname not found'
+    @expire = @config.expire || 3600
+
+    @_domain = config.domain.toLowerCase()
     @on "request", @handleRequest
-    @on "error", (err,req,res)=>
+    @on "error", @handleError
+
+  handleError: (err, req, res) ->
       console.log err
       res.header.rcode = NS_RCODE_NXDOMAIN
       res.send()
 
-  handleRequest: (req, res) =>
+  handleRequest: (req, res) ->
     question  = req.question
-    subdomain = Subdomain.extract question.name, @_domain, @db
-    console.log subdomain
+    console.log "request: name=#{question.name}, type=#{question.type}, class=#{question.class}, from=", res.rinfo.address
+    subdomain = Subdomain.extract question.name, @_domain
+    log "subdomain=", subdomain
 
     if subdomain? and isARequest( question ) and subdomain.getAddress()?
       res.addRR question.name, NS_T_A, NS_C_IN, 600, subdomain.getAddress()
     else if subdomain?.isEmpty() and isNSRequest( question )
-      res.addRR question.name, NS_T_SOA, NS_C_IN, 600, @soa, true
+      res.addRR question.name, NS_T_SOA, NS_C_IN, 600, @createSOA(), true
     else
       res.header.rcode = NS_RCODE_NXDOMAIN
 
     res.send()
+    log "sent"
 
   isARequest = (question) ->
     question.type is NS_T_A and question.class is NS_C_IN
@@ -72,33 +107,32 @@ exports.Server = class Server extends dnsserver.Server
   isNSRequest = (question) ->
     question.type is NS_T_NS and question.class is NS_C_IN
 
-  createSOA = (domain) ->
-    mname   = "ns-1.#{domain}"
-    rname   = "hostmaster.#{domain}"
+  createSOA: ->
+    mname   = @mname
+    rname   = @rname
     serial  = parseInt new Date().getTime() / 1000
     refresh = 28800
     retry   = 7200
-    expire  = 604800
+    expire  = @expire
     minimum = 3600
     dnsserver.createSOA mname, rname, serial, refresh, retry, expire, minimum
 
-exports.createServer = (domain, address = "127.0.0.1", db) ->
-  new Server domain, address, db
-
-fixAddr = www:'127.0.0.1'
-fixAddr[null] = '127.0.0.1'
+exports.createServer = (domain, address ) ->
+  new Server domain, address
 
 exports.Subdomain = class Subdomain
-  @extract: (name, domain, db) ->
+  @fixedAddr: undefined
+
+  @extract: (name, domain ) ->
     return unless name
     name = name.toLowerCase()
     offset = name.length - domain.length
 
     if domain is name.slice offset
-      subdomain = if 0 >= offset then null else name.slice 0, offset - 1
-      new constructor subdomain, db if constructor = @for subdomain
+      subdomain = if 0 >= offset then '' else name.slice 0, offset - 1
+      new constructor subdomain if constructor = @for subdomain
 
-  @for: (subdomain = "") ->
+  @for: (subdomain) ->
     if IPAddressSubdomain.pattern.test subdomain
       IPAddressSubdomain
     #else if EncodedSubdomain.pattern.test subdomain
@@ -106,11 +140,11 @@ exports.Subdomain = class Subdomain
     else
       Subdomain
 
-  constructor: (@subdomain, db ) ->
+  constructor: (@subdomain) ->
     @labels = @subdomain?.split(".") ? []
     @length = @labels.length
-    if fixAddr[@subdomain]
-      @address = fixAddr[@subdomain]
+    if xip.Subdomain.fixedAddr[@subdomain]
+      @address = xip.Subdomain.fixedAddr[@subdomain]
     else
       row = db.get( @subdomain )
       if row
