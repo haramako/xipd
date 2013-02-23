@@ -35,7 +35,19 @@ exports.run = (@config)->
   dns = xip.createServer( @config ).bind( @config.dnsPort )
   console.log "start dns server, port=#{@config.dnsPort}"
 
+# Get address from address list string
+get_address = (address)->
+  addresses = ( validate_address addr for addr in address.split(',') ).filter( (x)->x )
+  if addresses.length == 0
+    return null
+  else if addresses.length == 1
+    return addresses[0]
+  else
+    for addr in addresses
+      return addr if addr != '127.0.0.1'
+    return '127.0.0.1'
 
+# Filter local address from string
 validate_address = (address)->
   e = (parseInt(x,10) for x in address.trim().split('.'))
   return null if e.length != 4
@@ -54,12 +66,12 @@ validate_address = (address)->
 # Web Server
 exports.createWebServer = (config)->
   app = express()
-  app.use express.static( './public')
+  app.use express.static('./public')
 
   app.get '/update', (req,res)->
     res.contentType('json')
     name = req.param('subdomain')
-    address = validate_address req.param('address')
+    address = get_address req.param('address')
     unless address
       res.send err:'invalid address'
       return
