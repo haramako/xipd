@@ -1,6 +1,7 @@
 dnsserver = require "dnsserver"
 express = require "express"
 dirty = require 'dirty'
+punycode = require 'punycode'
 
 
 # , function(db){
@@ -37,7 +38,7 @@ exports.run = (@config)->
 
 # Get address from address list string
 get_address = (address)->
-  addresses = ( validate_address addr for addr in address.split(',') ).filter( (x)->x )
+  addresses = ( validate_address addr for addr in (address||'').split(',') ).filter( (x)->x )
   if addresses.length == 0
     return null
   else if addresses.length == 1
@@ -68,11 +69,15 @@ exports.createWebServer = (config)->
   app = express()
   app.use express.static('./public')
 
+  app.get '/', (req,res)->
+    res.render 'index.ejs', domain: config.domain
+
   app.get '/update', (req,res)->
     res.contentType('json')
-    name = ( req.param('subdomain') ? req.param('d') ? '' ).trim()
-    address = get_address req.param('address') ? req.param('a')
-    from_address = req.header('X-FORWARDED-FOR') ? req.connection.address().address
+    name = ( req.param('subdomain') || req.param('d') || '' ).trim()
+    name = punycode.toUnicode( punycode.toASCII( name ) )
+    address = get_address req.param('address') || req.param('a')
+    from_address = req.header('X-FORWARDED-FOR') || req.connection.address().address
 
     return res.send err:'empty subdomain' if !name or name == ''
     return res.send err:'invalid subdomain' if config.fixedAddr[name]
@@ -123,13 +128,13 @@ exports.Server = class Server extends dnsserver.Server
   handleRequest: (req, res) ->
     question  = req.question
     console.log "request: name=#{question.name}, type=#{question.type}, class=#{question.class}, from=", res.rinfo.address
-    subdomain = Subdomain.extract question.name, @_domain
+    subdomain = Subdomain.extract punycode.toUnicode(question.name), @_domain
     log "subdomain=", subdomain
 
     if subdomain? and isARequest( question ) and subdomain.getAddress()?
-      res.addRR question.name, NS_T_A, NS_C_IN, 600, subdomain.getAddress()
+      res.addRR punycode.toASCII( question.name ), NS_T_A, NS_C_IN, 600, subdomain.getAddress()
     else if subdomain?.isEmpty() and isNSRequest( question )
-      res.addRR question.name, NS_T_SOA, NS_C_IN, 600, @createSOA(), true
+      res.addRR punycode.toASCII( question.name ), NS_T_SOA, NS_C_IN, 600, @createSOA(), true
     else
       res.header.rcode = NS_RCODE_NXDOMAIN
 
@@ -176,7 +181,7 @@ exports.Subdomain = class Subdomain
       Subdomain
 
   constructor: (@subdomain) ->
-    @labels = @subdomain?.split(".") ? []
+    @labels = @subdomain?.split(".") || []
     @length = @labels.length
     if xip.Subdomain.fixedAddr[@subdomain]
       @address = xip.Subdomain.fixedAddr[@subdomain]

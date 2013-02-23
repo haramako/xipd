@@ -1,22 +1,40 @@
 $( function(){
-	var chars = 'abcdefghljklmnopqrstuvwxyz0123456789';
-	var randomSubdomain = chars[Math.floor(Math.random()*26)];
-	for( var i=0; i<5; i++ ){
-		randomSubdomain += chars[Math.floor(Math.random()*36)];
+	function randomSubdomain(){
+		var chars = 'abcdefghljklmnopqrstuvwxyz0123456789';
+		var s = chars[Math.floor(Math.random()*26)];
+		for( var i=0; i<3; i++ ){
+			s += chars[Math.floor(Math.random()*36)];
+		}
+		return s;
 	}
-		
-	$('input[name=subdomain]').val(randomSubdomain);
-	$('span#domain-name').text('.'+location.hostname);
+
+	function tmpl(id,param){
+		return new t( $('#'+id).text() ).render(param);
+	}
+
+	$(document).on('click', '.result-url', function(ev){ ev.target.select(); } );
+	$('input[name=subdomain]').val(randomSubdomain());
+
 	
 	$('#update-subdomain').on('submit',function(){
-		$.getJSON('/update', $('#update-subdomain').serialize(), function(data){
+		$.getJSON('/update?'+$('#update-subdomain').serialize(), function(data){
 			if( data.err == 'ok' ){
-				var dialog = $( $.parseHTML( $('#success-dialog').text().trim() )[0] );
-				dialog.find('.message').text('success!');
-				dialog.appendTo('body');
+				$('.result-inner').html( tmpl( 'success', {
+					subdomain: $('input[name="subdomain"]').val().trim(),
+					domain: DOMAIN,
+					addr: $('input[name="address"]').val().trim()
+				} ) );
+				setTimeout( function(){
+					var text = $('.result-url')[0];
+					text.focus();
+					text.select();
+				}, 0 );
 			}else{
-				alert('error!'+JSON.stringify(data));
+				var id = 'error-'+data.err.replace(/ /g,'-');
+				if( !$('#'+id)[0] ) id = 'error-unknown';
+				$('.result-inner').html( tmpl( id, data ) );
 			}
+			$('.result').animate({height:120},100).show();
 		});
 		return false;
 	});

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="bootstrap.min.css" type="text/css" />
+  <link rel="stylesheet" href="main.css" type="text/css" />
+  <title><%=domain%></title>
+</head>
+<body>
+
+<div class="content">
+  <div class="title">
+    <h1><%=domain%></h1>
+    <p>ALL YOUR IP ARE BELONG TO US!</p>
+  </div>
+  
+  <hr/>
+
+  <form id="update-subdomain" class="form form-inline form-main" method="GET" action="update">
+    <div class="rubi-box">
+      <span class="text-rubi">サブドメイン</span>
+      <input type="text" name="subdomain" placeholder="subdomain" value=""/>
+    </div>
+    <span id="domain-name">.<%=domain%></span> =
+    <div class="rubi-box">
+      <span class="text-rubi">IPアドレス</span>
+      <input type="text" name="address" placeholder="192.168.x.xxx" value="127.0.0.1"/>
+    </div>
+    　<button class="btn btn-primary btn-large" type="submit">作成!</button>
+  </form>
+  <div class="result">
+    <div class="result-inner">
+    </div>
+  </div>
+  
+  <hr/>
+
+  <div class="tab">
+    <%=domain%> は、LAN内用のダイナミックDNSサービスです。
+  </div>
+
+</div>
+
+
+<!-- TEMPLATE -->
+
+<script id="success" type="text/html">
+  <span class="result-success">サブドメイン <input class="result-url" readonly value="{{=subdomain}}.{{=domain}}"> を作成しました</span><br/>
+  <br/>
+  また、ターミナルから下記のコマンドを実行することで同様の内容が送信できます。<br/>
+  $ curl "http://<%=domain%>/update?d={{=subdomain}}&amp;a={{=addr}}"
+</script>
+
+<script id="error-unknown" type="text/html">
+  <span class="result-error">エラーが発生しました。</span><br/>
+  ( {{=err}} )
+</script>
+
+<script id="error-invalid-address" type="text/html">
+  <span class="result-error">アドレスが不正です。</span><br/>
+  使えるアドレスは下記のアドレスのいずれかです。<br/>
+  ・127.0.0.1<br/>
+  ・192.168.xxx.xxx<br/>
+  ・172.10.xxx.xxx<br/>
+  ・10.xxx.xxx.xxx
+</script>
+
+<script id="error-empty-subdomain" type="text/html">
+  <span class="result-error">サブドメインが入力されていません。</span>
+</script>
+
+<script id="error-invalid-subdomain" type="text/html">
+  <span class="result-error">このサブドメインは使用できません。</span><br/>
+  <br/>
+  www, ns, mail など一部のサブドメインは使用できません。<br/>
+  <br/>
+  This subdomain are belong to us.<br/>
+  You have no chance to survive make your time.
+</script>
+
+<script id="error-you-are-not-owner" type="text/html">
+  <span class="result-error">このサブドメインほかの利用者に使われています。</span><br/>
+  <br/>
+  接続元のIPアドレスによってユーザーを区別していますので、同じユーザーでもIPアドレスが変わっていると更新ができません。<br/>
+  その場合、期限切れでまで待つことで、再び更新が可能になります。
+</script>
+
+<script type="text/javascript">
+var DOMAIN = "<%=domain%>";
+</script>
+<script type="text/javascript" src="zepto.min.js"></script>
+<script type="text/javascript" src="t.min.js"></script>
+<script type="text/javascript" src="main.js"></script>
+</body>
+</html>

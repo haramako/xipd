@@ -15,6 +15,8 @@
   { "dnsserver": "~>0.1"
   , "express": "~>3.1"
   , "dirty": "=0.9.6"
+  , "punycode": "~=1.2.0"
+  , "ejs": "~0.8"
   }
 , "devDependencies":
   { "nodeunit": ">=0.5.0"

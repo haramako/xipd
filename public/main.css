@@ -80,3 +80,37 @@ button {
 
 .tab {
 }
+
+.result {
+	background-color: #333;
+	color: #fff;
+	border-radius: 8px;
+	padding: 8px 30px;
+	display: none;
+	height: 0;
+	overflow: hidden;
+}
+
+.result-inner {
+	text-align: left;
+	height: 120px;
+}
+
+.result-error {
+	font-size: 18px;
+	color: #f88;
+}
+
+.result-success {
+	font-size: 18px;
+	color: #8f8;
+}
+
+.result-url {
+	position: relative;
+	top: -2px;
+	width: 120px;
+	border-radius: 2px;
+	border: none;
+	padding: 4px 8px;
+}
