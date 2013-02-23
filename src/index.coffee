@@ -36,26 +36,47 @@ exports.run = (@config)->
   console.log "start dns server, port=#{@config.dnsPort}"
 
 
+validate_address = (address)->
+  e = (parseInt(x,10) for x in address.trim().split('.'))
+  return null if e.length != 4
+  address = (''+x for x in e).join('.')
+  if e[0] == 10
+    return address
+  else if e[0] == 172 and ( e[1] >= 16 and e[1] <= 31 )
+    return address
+  else if e[0] == 192 and e[1] == 168
+    return address
+  else if address == '127.0.0.1'
+    return address
+  else
+    return null
+
 # Web Server
 exports.createWebServer = (config)->
   app = express()
   app.use express.static( './public')
 
   app.get '/update', (req,res)->
-    name = req.param('subdomain')
-    address = req.param('address')
     res.contentType('json')
-    console.log( name, address )
+    name = req.param('subdomain')
+    address = validate_address req.param('address')
+    unless address
+      res.send err:'invalid address'
+      return
+    console.log 'update', name, address
     row = db.get(name)
-    if row
-      if row.address == address
-        row.expire_at = Date.now()
-        db.set(name,row)
+    from_address = req.connection.address().address
+    if row and row.expire_at > Date.now()
+      if row.owner == from_address
+        row.expire_at = Date.now() + config.expire*1000
+        db.set name, row
+        console.log 'update subdomain', name, address
         res.send err:'ok', msg:'updated'
       else
-        res.send err:'already exists'
+        res.send err:'you are not owner'
     else
-      db.set name, name:name, address:address, expire_at:Date.now()+60*60
+      console.log 'create subdomain', name, address
+      db.set name, { name:name, address:address, owner: from_address, expire_at:Date.now()+config.expire*1000 }
       res.send err:'ok'
 
 
@@ -113,7 +134,7 @@ exports.Server = class Server extends dnsserver.Server
     serial  = parseInt new Date().getTime() / 1000
     refresh = 28800
     retry   = 7200
-    expire  = @expire
+    expire  = @expire / 2
     minimum = 3600
     dnsserver.createSOA mname, rname, serial, refresh, retry, expire, minimum
 
@@ -147,7 +168,7 @@ exports.Subdomain = class Subdomain
       @address = xip.Subdomain.fixedAddr[@subdomain]
     else
       row = db.get( @subdomain )
-      if row
+      if row and row.expire_at > Date.now()
         @address = row.address
       else
         @address = null
