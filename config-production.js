@@ -2,6 +2,8 @@ module.exports = {
 	// Global Setting
 	debug: true,
 	db: 'xipd.db',
+	expire: 60*60*24, // expire [sec]
+	special: 'special.js',
 
 	// DNS Setting
 	dnsPort: 53,
@@ -9,6 +11,7 @@ module.exports = {
 	rootAddress: "49.212.3.54",
 	mname: "dorubako.ddo.jp",
 	rname: "haramako.gmail.com",
+	dns_expire: 60*60,
 	fixedAddr: {
 		"": "49.212.3.54",
 		www: "49.212.3.54",
@@ -18,7 +21,6 @@ module.exports = {
 		dev: "127.0.0.1",
 	},
 	MX: "49.212.3.54",
-	expire: 60*60,
 
 	// HTTP Setting
 	httpPort: 8000,

@@ -71,7 +71,7 @@ exports.createWebServer = (config)->
   app.use express.static('./public')
 
   app.get '/', (req,res)->
-    res.render 'index.ejs', domain: config.domain
+    res.render 'index.ejs', domain: config.domain, count: db.size()
 
   special = {}
   if config.special
