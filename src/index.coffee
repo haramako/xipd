@@ -70,14 +70,16 @@ exports.createWebServer = (config)->
 
   app.get '/update', (req,res)->
     res.contentType('json')
-    name = req.param('subdomain')
-    address = get_address req.param('address')
-    unless address
-      res.send err:'invalid address'
-      return
+    name = ( req.param('subdomain') ? req.param('d') ? '' ).trim()
+    address = get_address req.param('address') ? req.param('a')
+    from_address = req.header('X-FORWARDED-FOR') ? req.connection.address().address
+
+    return res.send err:'empty subdomain' if !name or name == ''
+    return res.send err:'invalid subdomain' if config.fixedAddr[name]
+    return res.send err:'invalid address' if !address
+
     console.log 'update', name, address
     row = db.get(name)
-    from_address = req.header('X-FORWARDED-FOR') ? req.connection.address().address
     if row and row.expire_at > Date.now()
       if row.owner == from_address
         row.expire_at = Date.now() + config.expire*1000
