@@ -65,7 +65,7 @@ exports.createWebServer = (config)->
       return
     console.log 'update', name, address
     row = db.get(name)
-    from_address = req.connection.address().address
+    from_address = req.header('X-FORWARDED-FOR') ? req.connection.address().address
     if row and row.expire_at > Date.now()
       if row.owner == from_address
         row.expire_at = Date.now() + config.expire*1000
