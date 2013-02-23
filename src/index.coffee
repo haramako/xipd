@@ -2,6 +2,7 @@ dnsserver = require "dnsserver"
 express = require "express"
 dirty = require 'dirty'
 punycode = require 'punycode'
+path = require 'path'
 
 
 # , function(db){
@@ -72,10 +73,19 @@ exports.createWebServer = (config)->
   app.get '/', (req,res)->
     res.render 'index.ejs', domain: config.domain
 
+  special = {}
+  if config.special
+    try
+      specialSrc = require( path.resolve( config.special ) )
+    catch err
+      config.error "cannot load #{config.special}"
+    for k,msg of specialSrc
+      for name in k.split(',')
+        special[name] = msg
+
   app.get '/update', (req,res)->
     res.contentType('json')
     name = ( req.param('subdomain') || req.param('d') || '' ).trim()
-    name = punycode.toUnicode( punycode.toASCII( name ) )
     address = get_address req.param('address') || req.param('a')
     from_address = req.header('X-FORWARDED-FOR') || req.connection.address().address
 
@@ -90,13 +100,13 @@ exports.createWebServer = (config)->
         row.expire_at = Date.now() + config.expire*1000
         db.set name, row
         console.log 'update subdomain', name, address
-        res.send err:'ok', msg:'updated'
+        res.send err:'ok', msg:'updated', specialMessage: special[name]
       else
         res.send err:'you are not owner'
     else
       console.log 'create subdomain', name, address
       db.set name, { name:name, address:address, owner: from_address, expire_at:Date.now()+config.expire*1000 }
-      res.send err:'ok'
+      res.send err:'ok', msg:'created', specialMessage: special[name]
 
 
 
@@ -114,7 +124,7 @@ exports.Server = class Server extends dnsserver.Server
     super
     @mname = @config.mname || throw 'config.mname not found'
     @rname = @config.mname || throw 'config.rname not found'
-    @expire = @config.expire || 3600
+    @dns_expire = @config.dns_expire || 3600
 
     @_domain = config.domain.toLowerCase()
     @on "request", @handleRequest
@@ -151,10 +161,10 @@ exports.Server = class Server extends dnsserver.Server
     mname   = @mname
     rname   = @rname
     serial  = parseInt new Date().getTime() / 1000
-    refresh = 28800
-    retry   = 7200
-    expire  = @expire / 2
-    minimum = 3600
+    refresh = @dns_expire * 8
+    retry   = @dns_expire * 2
+    expire  = @dns_expire
+    minimum = @dns_expire / 2
     dnsserver.createSOA mname, rname, serial, refresh, retry, expire, minimum
 
 exports.createServer = (domain, address ) ->

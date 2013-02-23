@@ -9,9 +9,8 @@ h1 {
 	font-size: 60px;
 }
 
-button {
-	border-radius: 8px;
-	border: solid 2px #888;
+dt {
+	margin-top: 12px;
 }
 
 .title {
@@ -78,7 +77,13 @@ button {
 	background-color: #000;
 }
 
-.tab {
+.desc {
+	text-align: left;
+}
+
+.desc h2 {
+	margin-top: 40px;
+	font-size: 24px;
 }
 
 .result {
@@ -113,4 +118,19 @@ button {
 	border-radius: 2px;
 	border: none;
 	padding: 4px 8px;
+}
+
+.result-special {
+	color: #ff8;
+}
+
+.footer {
+	margin-top: 120px;
+	padding: 12px 8px 4px 8px;
+	background-color: #444;
+	color: #aaa;
+}
+
+.footer a {
+	color: #abf;
 }

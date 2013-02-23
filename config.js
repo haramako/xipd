@@ -2,6 +2,8 @@ module.exports = {
 	// Global Setting
 	debug: true,
 	db: "xipd.db",
+	expire: 60*60*24, // expire [sec]
+	special: 'special.js',
 
 	// DNS Setting
 	dnsPort: 5300,
@@ -9,7 +11,7 @@ module.exports = {
 	rootAddress: "127.0.0.1",
 	mname: "ns.l.net",
 	rname: "hostmaster.l.net",
-	expire: 3600, // expire [sec]
+	dns_expire: 3600, // DNS TTL [sec]
 	fixedAddr: {
 		"": "127.0.0.1",
 		www: "127.0.0.1",

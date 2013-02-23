@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var xip = require('..');
-var fs = require('fs');
 var path = require('path');
 
 var argv = process.argv;

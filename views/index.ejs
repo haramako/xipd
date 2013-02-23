@@ -35,8 +35,88 @@
   
   <hr/>
 
-  <div class="tab">
-    <%=domain%> は、LAN内用のダイナミックDNSサービスです。
+  <div class="desc">
+    <h2>なんのサービス？</h2>
+
+    <p><%=domain%> は、無料の<b>LAN内用のダイナミックDNSサービス</b>です。<br/>
+    「(好きな名前).<%=domain%>」 で指定したIPアドレスにアクセスするように指定することができます。</p>
+
+    <p>上のフォームで、サブドメインとIPアドレスを指定して「作成」ボタンを押すだけで、作成は完了です。<br/>
+    作ったサブドメインは<b>１日ほどで有効期限が切れます</b>ので、後日、利用する際には作成し直してください。</p>
+
+    <p>また、LAN内での使用を目的としたサービスなので、ローカルアドレス(127.0.0.1, 192.168.xxx.xxxなど）のみ割り当てらます。</p>
+
+    
+    <h2>どういうときに役に立つの？</h2>
+    
+    <p><b>WEBサービスの開発</b>などで役に立ちます。</p>
+    <p>自分のPCで動かしているWEBを社内で他の人にテストしてほしいときに、従来だと下記のような方法が使われています。</p>
+    <ul>
+      <li>IPアドレスを伝えてアクセスしてもらう　→　IPアドレスが変わっちゃう！ VirtualHostで振り分けられない！</li>
+      <li>hosts に書いてアクセスする　→　IPアドレスが変わってまうで！ 「センパィ、hostsってなんすか・・・」！？</li>
+      <li>社内DNSを使用する　→　DNSを立てるのが面倒くさい！ 変更が面倒くさい！</li>
+      <li><a href="http://xip.io/" target="_blank">xip.io</a>を利用する　→　（・・・悪くない）</li>
+    </ul>
+    
+    <p>そこでこのサービスを使って something.<%=domain%> などのサブドメインを作成して他の人に伝えれば、
+      IPアドレスが変わっても更新するだけでそのまま使えます。<br/>
+      また、VirtualHostによる振り分けもできます。
+    </p>
+
+    
+    <h2>よくある質問</h2>
+
+    <dl>
+
+      <dt>無料なの？</dt>
+      <dd>無料です。</dd>
+      
+      <dt>サブドメインの有効期限は？</dt>
+      <dd>約２４時間です。</dd>
+    
+      <dt>サブドメインの有効期限が切れるまで、変更できないの？</dt>
+      <dd>
+        「作成」ボタンで変更が可能です。<br/>
+        ただし、接続元IPアドレスが作成時と同じ必要があります。(LAN内のアドレスではなく、WAN上のアドレスです）<br/>
+        また、DNSのタイムアウト待ちのために反映に１時間ほどかかります。
+      </dd>
+
+      <dt>サブドメイン www を登録しようとしたら、作成できなかった</dt>
+      <dd>
+        www, mail など一部のサブドメインは予約してありますので使えません。<br/>
+        また、dev, me は 127.0.0.1 で固定されています。
+      </dd>
+
+      <dt>日本語のサブドメインは使えるの？</dt>
+      <dd>使えます。</dd>
+
+      <dt>LANじゃなくてWANのアドレスで使いたい</dt>
+      <dd>
+        <a href="http://www.kooss.com/ddns/" target="_blank">ダイナミックDNS</a>で検索すると、無料のサービスがいろいろあります。<br/>
+        技術的には、WANのアドレスも使用可能にできるのですが、登録不要のサービスなので乗っ取りなどの危険を考えて制限しています。
+        問題なければ使用可能にしたいのですが・・・有識者の方がいたらご意見を頂きたいところです。
+      </dd>
+
+      <dt>自動的に更新したいんだけど・・・</dt>
+      <dd>
+        http://<%=domain%>/update?d=(ドメイン名)&amp;a=(IPアドレス) にアクセスすることで、更新ができます。<br/>
+        Unix系なら、crontabに下記のように書けば定期的に更新できるでしょう。
+        <pre>0 * * * * addr=`ifconfig | grep netmask | awk '{ printf $2 ","}'` &amp;&amp; curl "http://<%=domain%>/update?d=<i>(サブドメイン)</i>&a=$addr" >/dev/null 2>&amp;1</pre>
+      </dd>
+    </dl>
+    
+    <h2>技術的内容</h2>
+    
+    <ul>
+      <li><a href="https://github.com/haramako/xipd">ソースコード</a>
+    </ul>
+
+  </div>
+
+  <div class="footer">
+    <div style="float:left;">&copy; 2013 <a href="https://twitter.com/haramako">Makoto Harada</a> </div>
+    <div style="float:right;">powered by <a href="http://nodejs.org/">Node.js</a> | <a href="https://github.com/sstephenson/xipd/">xip.io</a></div>
+    <div style="clear:both;"></div>
   </div>
 
 </div>
@@ -47,8 +127,9 @@
 <script id="success" type="text/html">
   <span class="result-success">サブドメイン <input class="result-url" readonly value="{{=subdomain}}.{{=domain}}"> を作成しました</span><br/>
   <br/>
-  また、ターミナルから下記のコマンドを実行することで同様の内容が送信できます。<br/>
-  $ curl "http://<%=domain%>/update?d={{=subdomain}}&amp;a={{=addr}}"
+  サブドメインの有効期限は、約２４時間です。<br/>
+  <br/>
+  <span class="result-special">{{=specialMessage}}</span>
 </script>
 
 <script id="error-unknown" type="text/html">
@@ -82,7 +163,9 @@
   <span class="result-error">このサブドメインほかの利用者に使われています。</span><br/>
   <br/>
   接続元のIPアドレスによってユーザーを区別していますので、同じユーザーでもIPアドレスが変わっていると更新ができません。<br/>
-  その場合、期限切れでまで待つことで、再び更新が可能になります。
+  その場合、期限切れでまで待つことで、再び更新が可能になります。<br/>
+  <br/>
+  <span class="result-special">{{=specialMessage}}</span>
 </script>
 
 <script type="text/javascript">

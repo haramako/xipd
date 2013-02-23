@@ -22,7 +22,8 @@ $( function(){
 				$('.result-inner').html( tmpl( 'success', {
 					subdomain: $('input[name="subdomain"]').val().trim(),
 					domain: DOMAIN,
-					addr: $('input[name="address"]').val().trim()
+					addr: $('input[name="address"]').val().trim(),
+					specialMessage: data.specialMessage
 				} ) );
 				setTimeout( function(){
 					var text = $('.result-url')[0];
